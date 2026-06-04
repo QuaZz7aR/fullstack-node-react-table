@@ -40,7 +40,7 @@ db.exec(`
         employment_type TEXT CHECK(employment_type IN('full-time', 'part-time', 'contract')),
         format TEXT CHECK(format IN('office', 'remote', 'hybrid')),
         status TEXT CHECK(status IN('active', 'on_leave', 'fired')),
-        status_date TEXT NOT NULL,
+        start_date TEXT NOT NULL,
         end_date TEXT,
         is_current INTEGER DEFAULT 1 CHECK(is_current IN(0, 1))
     );
