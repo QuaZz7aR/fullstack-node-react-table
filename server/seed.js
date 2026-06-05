@@ -110,12 +110,12 @@ for (const employee of allEmployees) {
     const grade = randomItem(grades);
     const office = randomItem(allOffices);
     const position = randomItem(allPositions);
-    const salary = Math.floor(2000 + Math.random() * 7000);
+    const salary = Math.floor(1000 + Math.random() * 2000);
 
     if (Math.random() < 0.3) {
         const oldStart = randomDate("2018-01-01", "2020-12-31");
         const oldEnd = randomDate("2022-01-01", "2023-12-31");
-        insertContract.run(employee.id, position.id, position.department_id, office.id, null, salary - 1000,
+        insertContract.run(employee.id, position.id, position.department_id, office.id, null, salary - 500,
             randomItem(grades), randomItem(employmentTypes), randomItem(formats), "fired", oldStart, oldEnd, 0
         )
     }
@@ -128,11 +128,3 @@ for (const employee of allEmployees) {
 }
 
 console.log("contracts seeded");
-
-const count = db.prepare(`
-  SELECT 
-    (SELECT COUNT(*) FROM employees) as employees,
-    (SELECT COUNT(*) FROM contracts) as contracts
-`).get()
-
-console.log(count)
