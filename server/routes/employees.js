@@ -4,6 +4,91 @@ import db from "../database.js";
 const router = Router();
 
 router.post("/list", (req, res) => {
+
+    const { search, department, grade, salaryFrom, salaryTo, startDateFrom, startDateTo,
+        status, format, employeeType, gender, birthDateFrom, birthDateTo, position, officeCity
+    } = req.body;
+
+    const conditions = [];
+    const params = [];
+
+    if (search) {
+        conditions.push(`(e.first_name LIKE ? OR e.last_name LIKE ? OR e.email LIKE ?)`);
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    if (department) {
+        conditions.push(`d.name = ?`);
+        params.push(department);
+    }
+
+    if (grade) {
+        conditions.push(`c.grade = ?`);
+        params.push(grade);
+    }
+
+    if (salaryFrom) {
+        conditions.push(`c.salary >= ?`);
+        params.push(salaryFrom);
+    }
+
+    if (salaryTo) {
+        conditions.push(`c.salary <= ?`);
+        params.push(salaryTo);
+    }
+
+    if (startDateFrom) {
+        conditions.push(`c.start_date >= ?`);
+        params.push(startDateFrom);
+    }
+
+    if (startDateTo) {
+        conditions.push(`c.start_date <= ?`);
+        params.push(startDateTo);
+    }
+
+    if (status) {
+        conditions.push(`c.status = ?`)
+        params.push(status)
+    }
+
+    if (format) {
+        conditions.push(`c.format = ?`)
+        params.push(format)
+    }
+
+    if (employmentType) {
+        conditions.push(`c.employment_type = ?`)
+        params.push(employmentType)
+    }
+
+    if (gender) {
+        conditions.push(`e.gender = ?`)
+        params.push(gender)
+    }
+
+    if (birthDateFrom) {
+        conditions.push(`e.birth_date >= ?`)
+        params.push(birthDateFrom)
+    }
+
+    if (birthDateTo) {
+        conditions.push(`e.birth_date <= ?`)
+        params.push(birthDateTo)
+    }
+
+    if (position) {
+        conditions.push(`p.name = ?`)
+        params.push(position)
+    }
+
+    if (officeCity) {
+        conditions.push(`o.city = ?`)
+        params.push(officeCity)
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
     const employees = db.prepare(`
         SELECT
         e.id,
@@ -28,7 +113,8 @@ router.post("/list", (req, res) => {
         JOIN departments d ON d.id = c.department_id
         JOIN positions p ON p.id = c.position_id
         JOIN offices o ON o.id = c.office_id
-    `).all()
+        ${where}
+    `).all(...params)
 
     res.json(employees);
 })
