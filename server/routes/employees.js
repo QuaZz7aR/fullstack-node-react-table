@@ -6,7 +6,8 @@ const router = Router();
 router.post("/list", (req, res) => {
 
     const { search, department, grade, salaryFrom, salaryTo, startDateFrom, startDateTo,
-        status, format, employeeType, gender, birthDateFrom, birthDateTo, position, officeCity
+        status, format, employmentType, gender, birthDateFrom, birthDateTo, position, officeCity,
+        page, pageSize
     } = req.body;
 
     const conditions = [];
@@ -88,6 +89,17 @@ router.post("/list", (req, res) => {
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const limit = pageSize || 20;
+    const offset = ((page || 1) - 1) * limit;
+
+    const baseQuery = `
+        FROM employees e
+        JOIN contracts c ON c.employee_id = e.id AND c.is_current = 1
+        JOIN departments d ON d.id = c.department_id
+        JOIN positions p ON p.id = c.position_id
+        JOIN offices o ON o.id = c.office_id
+        ${where}
+    `
 
     const employees = db.prepare(`
         SELECT
@@ -108,15 +120,22 @@ router.post("/list", (req, res) => {
         p.name AS position,
         o.city AS office_city,
         o.country AS office_country
-        FROM employees e
-        JOIN contracts c ON c.employee_id = e.id AND c.is_current = 1
-        JOIN departments d ON d.id = c.department_id
-        JOIN positions p ON p.id = c.position_id
-        JOIN offices o ON o.id = c.office_id
-        ${where}
-    `).all(...params)
+        ${baseQuery}
+        LIMIT ? OFFSET ?
+    `).all(...params, limit, offset)
 
-    res.json(employees);
+    const total = db.prepare(`
+        SELECT COUNT(*) AS count
+        ${baseQuery}
+    `).get(...params)
+
+    res.json({
+        data: employees,
+        total: total.count,
+        page: page || 1,
+        pageSize: limit,
+        totalPages: Math.ceil(total.count / limit)
+    });
 })
 
 export default router;
