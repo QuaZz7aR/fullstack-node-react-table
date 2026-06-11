@@ -24,7 +24,7 @@ router.post("/list", (req, res) => {
 
     const { search, department, grade, salaryFrom, salaryTo, startDateFrom, startDateTo,
         status, format, employmentType, gender, birthDateFrom, birthDateTo, position, officeCity,
-        page, pageSize
+        page, pageSize, sortBy, sortOrder
     } = req.body;
 
     const conditions = [];
@@ -109,6 +109,23 @@ router.post("/list", (req, res) => {
     const limit = pageSize || 20;
     const offset = ((page || 1) - 1) * limit;
 
+    const allowedSortFields = {
+        first_name: 'e.first_name',
+        last_name: 'e.last_name',
+        salary: 'c.salary',
+        grade: 'c.grade',
+        start_date: 'c.start_date',
+        department: 'd.name',
+        position: 'p.name',
+        office_city: 'o.city',
+        birth_date: 'e.birth_date',
+        status: 'c.status'
+    }
+
+    const sortField = allowedSortFields[sortBy] || 'e.last_name'
+    const sortDirection = sortOrder === 'desc' ? 'DESC' : 'ASC'
+    const orderBy = `ORDER BY ${sortField} ${sortDirection}`
+
     const baseQuery = `
         FROM employees e
         JOIN contracts c ON c.employee_id = e.id AND c.is_current = 1
@@ -116,6 +133,7 @@ router.post("/list", (req, res) => {
         JOIN positions p ON p.id = c.position_id
         JOIN offices o ON o.id = c.office_id
         ${where}
+        ${orderBy}
     `
 
     const employees = db.prepare(`
