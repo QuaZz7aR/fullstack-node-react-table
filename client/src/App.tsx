@@ -1,9 +1,10 @@
+import EmployeeTable from "./components/EmployeeTable"
 
 function App() {
 
   return (
     <>
-      <h1>HR Dashboard</h1>
+      <EmployeeTable />
     </>
   )
 }
