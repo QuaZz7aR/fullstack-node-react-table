@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchEmployees, fetchFilterOptions, type Filters } from "../api/employee";
 
 export function useFiltersOptions() {
@@ -10,6 +10,7 @@ export function useFiltersOptions() {
 export function useEmployees(filters: Filters) {
     return useQuery({
         queryKey: ["employees", filters],
-        queryFn: () => fetchEmployees(filters)
+        queryFn: () => fetchEmployees(filters),
+        placeholderData: keepPreviousData
     })
 }
