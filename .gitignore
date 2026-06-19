@@ -2,3 +2,5 @@ node_modules/
 server/db.sqlite
 server/db.sqlite-shm
 server/db.sqlite-wal
+client/node_modules/
+client/dist/
