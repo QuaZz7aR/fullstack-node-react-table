@@ -6,7 +6,7 @@ const columnHelper = createColumnHelper<Employee>();
 const columns = [
 
     columnHelper.accessor("first_name", {
-        header: "Firts Name"
+        header: "Firts Name",
     }),
     columnHelper.accessor("last_name", {
         header: "Last Name"
@@ -39,7 +39,7 @@ const columns = [
         header: "Status"
     }),
     columnHelper.accessor("start_date", {
-        header: "Start date"
+        header: "Start date",
     }),
     columnHelper.accessor("department", {
         header: "Department"
