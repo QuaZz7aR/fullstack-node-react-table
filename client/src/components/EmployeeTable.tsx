@@ -4,11 +4,13 @@ import columns from "../columns/columns"
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import Filters from "./Filters"
 import Drawer from "./Drawer"
+import type { Filters as FiltersType } from "../api/employee";
 
 export default function EmployeeTable() {
-    const [filters, setFilters] = useState({
+
+    const [filters, setFilters] = useState<FiltersType>({
         page: 1,
-        pageSize: 20,
+        pageSize: 20
     });
 
     const { data, isLoading, isError } = useEmployees(filters);
@@ -18,6 +20,7 @@ export default function EmployeeTable() {
         columns: columns,
         getCoreRowModel: getCoreRowModel(),
         manualSorting: true,
+        columnResizeMode: "onChange",
         onSortingChange: (updater) => {
             const newSorting = typeof updater === "function" ? updater([]) : updater;
             if (newSorting.length > 0) {
@@ -35,14 +38,30 @@ export default function EmployeeTable() {
                 desc: filters.sortOrder === "desc"
             }]
         },
-        defaultColumn: {
-            minSize: 100,
-            size: 100
-
-        }
     })
 
+    function countActiveFilters(filters: object) {
+        const ignored = ["page", "pageSize", "sortBy", "sortOrder"];
+        return Object.entries(filters).filter(([key, value]) =>
+            !ignored.includes(key) && value !== "" && value !== undefined && value !== null).length
+    }
+
+    const activeFilters = countActiveFilters(filters);
+
     const [drawerIsOpen, setDrawerIsOpen] = useState(false);
+
+    const allowedSortFields = [
+        "first_name",
+        'last_name',
+        "salary",
+        "grade",
+        "start_date",
+        "department",
+        "position",
+        "office_city",
+        "birth_date",
+        "status"
+    ]
 
     if (isLoading) return <div>Data is loading...</div>
     if (isError) return <div>Something went wrong while fetching employees...</div>
@@ -51,7 +70,7 @@ export default function EmployeeTable() {
         <div className="p-4">
             <button className="mb-4 px-4 py-2 border-2 rounded text-sm font-semibold hover:bg-gray-50 hover:cursor-pointer"
                 onClick={() => setDrawerIsOpen(true)}>
-                ☰ Filters
+                ☰ Filters ({activeFilters})
             </button>
 
             <Drawer isOpen={drawerIsOpen} onClose={() => setDrawerIsOpen(false)}>
@@ -67,27 +86,38 @@ export default function EmployeeTable() {
             </Drawer>
 
             <div className="w-full">
-                <table className="w-full border-collapse text-sm">
-                    <thead>
-                        {table.getHeaderGroups().map(headerGroup => <tr key={headerGroup.id} className="border-b bg-gray-300">
-                            {headerGroup.headers.map(header => <th
-                                key={header.id}
-                                className="p-2 text-left font-semibold hover:cursor-pointer border"
-                                onClick={header.column.getToggleSortingHandler()}
-                            >
-                                {flexRender(header.column.columnDef.header, header.getContext())}
-                                {header.column.getIsSorted() === 'asc' ? ' ↑' : header.column.getIsSorted() === 'desc' ? ' ↓' : ' ↕'}
-                            </th>)}
-                        </tr>)}
-                    </thead>
-                    <tbody>
-                        {table.getRowModel().rows.map(row => <tr key={row.id} className="border-b hover:bg-gray-300">
-                            {row.getVisibleCells().map(cell => <td key={cell.id} className="p-2">
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </td>)}
-                        </tr>)}
-                    </tbody>
-                </table>
+                <div className="overflow-x-scroll">
+                    <table className="w-full border-collapse text-sm" style={{ width: table.getTotalSize() }}>
+                        <thead>
+                            {table.getHeaderGroups().map(headerGroup => <tr key={headerGroup.id} className="border-b bg-gray-300">
+                                {headerGroup.headers.map(header => <th
+                                    key={header.id}
+                                    className={`p-2 text-left font-semibold border relative
+                                        ${allowedSortFields.includes(header.column.id) ? "hover:cursor-pointer" : ""}`}
+                                    onClick={allowedSortFields.includes(header.column.id) ? header.column.getToggleSortingHandler() : undefined}
+                                    style={{ width: header.getSize() }}
+                                >
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                    {allowedSortFields.includes(header.column.id) ? header.column.getIsSorted() === 'asc' ? ' ↑' : header.column.getIsSorted() === 'desc' ? ' ↓' : ' ↕' : undefined}
+
+                                    <div className={`absolute top-0 right-0 h-full w-1 
+                                    cursor-col-resize select-none touch-none bg-gray-300 hover:bg-blue-400
+                                    ${header.column.getIsResizing() ? 'bg-blue-600' : ''}`}
+                                        onClick={e => e.stopPropagation()}
+                                        onMouseDown={header.getResizeHandler()}
+                                        onTouchStart={header.getResizeHandler()} />
+                                </th>)}
+                            </tr>)}
+                        </thead>
+                        <tbody>
+                            {table.getRowModel().rows.map(row => <tr key={row.id} className="border-b hover:bg-gray-300">
+                                {row.getVisibleCells().map(cell => <td key={cell.id} className="p-2">
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </td>)}
+                            </tr>)}
+                        </tbody>
+                    </table>
+                </div>
                 <div className=" flex mt-4 gap-2 items-center">
                     <button
                         className="px-3 py-1 border rounded disabled:opacity-20 disabled:hover:cursor-auto hover:cursor-pointer"
@@ -96,7 +126,7 @@ export default function EmployeeTable() {
                     >«</button>
                     <button
                         className="px-3 py-1 border rounded disabled:opacity-20 disabled:hover:cursor-auto hover:cursor-pointer"
-                        onClick={() => setFilters(prev => ({ ...prev, page: prev.page - 1 }))}
+                        onClick={() => setFilters(prev => ({ ...prev, page: (prev.page ?? 1) - 1 }))}
                         disabled={filters.page === 1}
                     >‹</button>
 
@@ -104,7 +134,7 @@ export default function EmployeeTable() {
 
                     <button
                         className="px-3 py-1 border rounded disabled:opacity-20 disabled:hover:cursor-auto hover:cursor-pointer"
-                        onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
+                        onClick={() => setFilters(prev => ({ ...prev, page: (prev.page ?? 1) + 1 }))}
                         disabled={filters.page === data?.totalPages}
                     >›</button>
                     <button

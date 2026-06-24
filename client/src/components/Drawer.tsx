@@ -18,7 +18,7 @@ function Drawer({ children, isOpen, onClose }: Props) {
                     <span className="font-semibold">Filters</span>
                     <button onClick={onClose} className="text-gray-500 hover:text-black hover:cursor-pointer">✕</button>
                 </div>
-                <div className="overflow-y-auto h-full pb-16">{children}</div>
+                <div className="overflow-y-auto h-full pb-16 transition-transform duration-300">{children}</div>
             </div>
         </>
     )

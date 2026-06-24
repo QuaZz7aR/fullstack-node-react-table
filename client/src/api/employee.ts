@@ -21,25 +21,25 @@ export interface Employee {
 }
 
 export interface Filters {
-    search: string,
-    department: string,
-    grade: string,
-    salaryFrom: string,
-    salaryTo: string,
-    startDateFrom: string,
-    startDateTo: string,
-    status: string,
-    format: string,
-    employmentType: string,
-    gender: string,
-    birthDateFrom: string,
-    birthDateTo: string,
-    position: string,
-    officeCity: string,
-    page: number,
-    pageSize: number,
-    sortBy: string,
-    sortOrder: "asc" | "desc"
+    search?: string,
+    department?: string,
+    grade?: string,
+    salaryFrom?: string,
+    salaryTo?: string,
+    startDateFrom?: string,
+    startDateTo?: string,
+    status?: string,
+    format?: string,
+    employmentType?: string,
+    gender?: string,
+    birthDateFrom?: string,
+    birthDateTo?: string,
+    position?: string,
+    officeCity?: string,
+    page?: number,
+    pageSize?: number,
+    sortBy?: string,
+    sortOrder?: "asc" | "desc"
 }
 
 export interface EmployeeResponse {

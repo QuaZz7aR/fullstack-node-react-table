@@ -9,7 +9,7 @@ const columns = [
         header: "Firts Name",
     }),
     columnHelper.accessor("last_name", {
-        header: "Last Name"
+        header: "Last Name",
     }),
     columnHelper.accessor("email", {
         header: "Email"
