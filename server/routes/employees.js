@@ -1,5 +1,6 @@
 import { Router } from "express";
 import db from "../database.js";
+import { validateEmployee } from "../validation/employee.js";
 
 const router = Router();
 
@@ -171,6 +172,88 @@ router.post("/list", (req, res) => {
         pageSize: limit,
         totalPages: Math.ceil(total.count / limit)
     });
+})
+
+router.post("/create", (req, res) => {
+    const { valid, errors } = validateEmployee(req.body);
+    if (!valid) return res.status(400).json({ errors });
+
+    const { first_name, last_name, email, phone, gender, birth_date, salary,
+        grade, employment_type, format, status, start_date, department_id,
+        position_id, office_id, manager_id
+    } = req.body;
+
+    try {
+        const employee = db.prepare(`
+            INSERT INTO employees (first_name, last_name, email, phone, gender, birth_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `).run(first_name, last_name, email, phone, gender, birth_date)
+
+        db.prepare(`
+            INSERT INTO contracts (employee_id, position_id, department_id, office_id, 
+            manager_id, salary, grade, employment_type, format, status, start_date, is_current)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        `).run(employee.lastInsertRowid, position_id, department_id, office_id ?? null, manager_id ?? null,
+            salary, grade, employment_type, format, status ?? 'active', start_date);
+
+        res.status(201).json({ id: employee.lastInsertRowid })
+    } catch (e) {
+        console.log(e)
+        if (e.code === `SQLITE_CONSTRAINT_UNIQUE`) {
+            return res.status(400).json({ errors: { email: "email already exists" } })
+        }
+        res.status(500).json({ error: "server error" })
+    }
+})
+
+router.put("/:id", (req, res) => {
+    const { valid, errors } = validateEmployee(req.body)
+    if (!valid) return res.status(400).json({ errors });
+
+    const { first_name, last_name, email, phone, gender, birth_date, salary,
+        grade, employment_type, format, status, start_date, department_id,
+        position_id, office_id, manager_id
+    } = req.body;
+
+    try {
+        db.prepare(`
+            UPDATE employees SET first_name=?, last_name=?, email=?, phone=?, gender=?, birth_date=?
+            WHERE id=?
+        `).run(first_name, last_name, email, phone, gender, birth_date, req.params.id)
+
+        db.prepare(`
+            UPDATE contracts SET salary=?, grade=?, employment_type=?, format=?, 
+            status=?, start_date=?, department_id=?, position_id=?, office_id=?
+            WHERE employee_id=? AND is_current=1
+        `).run(salary, grade, employment_type, format, status, start_date,
+            department_id, position_id, office_id ?? null, req.params.id);
+
+        res.json({ success: true })
+    } catch (e) {
+        if (e.code === `SQLITE_CONSTRAINT_UNIQUE`)
+            return res.status(400).json({ errors: { email: "email already exists" } })
+        res.status(500).json({ error: "server error" })
+    }
+})
+
+router.delete("/:id", (req, res) => {
+    try {
+        db.prepare(`DELETE from contracts WHERE employee_id = ?`).run(req.params.id);
+        db.prepare(`DELETE from employees WHERE id = ?`).run(req.params.id);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: "Server error" })
+    }
+
+
+})
+
+router.get('/ids', (req, res) => {
+  res.json({
+    departments: db.prepare('SELECT id, name FROM departments').all(),
+    positions: db.prepare('SELECT id, name FROM positions').all(),
+    offices: db.prepare('SELECT id, city FROM offices').all(),
+  })
 })
 
 export default router;
