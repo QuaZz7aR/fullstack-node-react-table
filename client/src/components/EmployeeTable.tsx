@@ -1,10 +1,28 @@
 import { useState } from "react";
 import { useEmployees } from "../hooks/useEmployees"
-import columns from "../columns/columns"
+import { createColumns } from "../columns/columns"
 import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import Filters from "./Filters"
 import Drawer from "./Drawer"
-import type { Filters as FiltersType } from "../api/employee";
+import type { Employee, EmployeeFormData, Filters as FiltersType } from "../types/employee";
+import { useMutation } from "@tanstack/react-query";
+import { createEmployee, deleteEmployee, updateEmployee } from "../api/employee";
+import queryClient from "../queryClient/queryClient";
+import Modal from "./Modal";
+import EmployeeForm from "./EmployeeForm";
+
+const allowedSortFields = [
+    "first_name",
+    'last_name',
+    "salary",
+    "grade",
+    "start_date",
+    "department",
+    "position",
+    "office_city",
+    "birth_date",
+    "status"
+]
 
 export default function EmployeeTable() {
 
@@ -12,8 +30,9 @@ export default function EmployeeTable() {
         page: 1,
         pageSize: 20
     });
-
     const { data, isLoading, isError } = useEmployees(filters);
+    const [drawerIsOpen, setDrawerIsOpen] = useState(false);
+    const columns = createColumns(handleEdit, id => deleteMutation.mutate(id));
 
     const table = useReactTable({
         data: data?.data ?? [],
@@ -48,30 +67,79 @@ export default function EmployeeTable() {
 
     const activeFilters = countActiveFilters(filters);
 
-    const [drawerIsOpen, setDrawerIsOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
+    const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-    const allowedSortFields = [
-        "first_name",
-        'last_name',
-        "salary",
-        "grade",
-        "start_date",
-        "department",
-        "position",
-        "office_city",
-        "birth_date",
-        "status"
-    ]
+    const createMutation = useMutation({
+        mutationFn: createEmployee,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["employees"] });
+            setIsModalOpen(false);
+        },
+        onError: (err: { errors: Record<string, string> }) => {
+            console.log(err);
+            setServerErrors(err.errors);
+        }
+    })
+
+    const updateMutation = useMutation({
+        mutationFn: ({ data, id }: { id: number, data: EmployeeFormData }) => updateEmployee(data, id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["employees"] });
+            setIsModalOpen(false);
+        },
+        onError: (err: { errors: Record<string, string> }) => {
+            setServerErrors(err.errors);
+        }
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: deleteEmployee,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["employees"] });
+        }
+    })
+
+    function handleSubmit(data: EmployeeFormData) {
+        setServerErrors({});
+        if (editingEmployee) {
+            updateMutation.mutate({ id: editingEmployee.id, data })
+        } else {
+            createMutation.mutate(data);
+        }
+    }
+
+    function handleEdit(employee: Employee) {
+        setEditingEmployee(employee);
+        setServerErrors({});
+        setIsModalOpen(true);
+    }
+
+    function handleCreate() {
+        setEditingEmployee(null);
+        setServerErrors({});
+        setIsModalOpen(true);
+    }
 
     if (isLoading) return <div>Data is loading...</div>
     if (isError) return <div>Something went wrong while fetching employees...</div>
 
     return (
         <div className="p-4">
-            <button className="mb-4 px-4 py-2 border-2 rounded text-sm font-semibold hover:bg-gray-50 hover:cursor-pointer"
-                onClick={() => setDrawerIsOpen(true)}>
-                ☰ Filters ({activeFilters})
-            </button>
+            <div className="flex gap-2 mb-4">
+                <button className=" px-4 py-2 border-2 rounded text-sm font-semibold hover:bg-gray-50 hover:cursor-pointer"
+                    onClick={() => setDrawerIsOpen(true)}>
+                    ☰ Filters ({activeFilters})
+                </button>
+
+                <button
+                    className=" px-4 py-2 border-2 rounded text-sm font-semibold hover:bg-gray-50 hover:cursor-pointer"
+                    onClick={handleCreate}
+                >
+                    + Add Employee
+                </button>
+            </div>
 
             <Drawer isOpen={drawerIsOpen} onClose={() => setDrawerIsOpen(false)}>
                 <Filters
@@ -143,6 +211,15 @@ export default function EmployeeTable() {
                         disabled={filters.page === data?.totalPages}
                     >»</button>
                 </div>
+                <Modal
+                    title={editingEmployee ? "Edit employee data" : "Create new employee"}
+                    onClose={() => setIsModalOpen(false)}
+                    isOpen={isModalOpen}
+                >
+                    <EmployeeForm initial={editingEmployee ?? undefined} onSubmit={handleSubmit}
+                        serverErrors={serverErrors} isLoading={createMutation.isPending || updateMutation.isPending}
+                    />
+                </Modal>
             </div>
         </div>
     )

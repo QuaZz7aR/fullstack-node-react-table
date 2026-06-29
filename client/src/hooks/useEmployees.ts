@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { fetchEmployees, fetchFilterOptions, type Filters } from "../api/employee";
+import { fetchEmployees, fetchFilterOptions, } from "../api/employee";
+import type { Filters } from "../types/employee";
 
 export function useFiltersOptions() {
     return useQuery({

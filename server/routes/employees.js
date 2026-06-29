@@ -5,14 +5,14 @@ import { validateEmployee } from "../validation/employee.js";
 const router = Router();
 
 router.get("/filters", (req, res) => {
-    const departments = db.prepare(`SELECT DISTINCT name FROM departments ORDER by name`).all();
-    const positions = db.prepare(`SELECT DISTINCT name FROM positions ORDER by name`).all();
-    const cities = db.prepare(`SELECT DISTINCT city FROM offices ORDER by city`).all();
+    const departments = db.prepare(`SELECT id, name FROM departments ORDER by name`).all();
+    const positions = db.prepare(`SELECT id, name FROM positions ORDER by name`).all();
+    const cities = db.prepare(`SELECT id, city FROM offices ORDER by city`).all();
 
     res.json({
-        departments: departments.map(d => d.name),
-        positions: positions.map(p => p.name),
-        cities: cities.map(o => o.city),
+        departments: departments,
+        positions: positions,
+        cities: cities,
         grades: ['junior', 'middle', 'senior', 'lead'],
         statuses: ['active', 'on_leave', 'fired'],
         formats: ['office', 'remote', 'hybrid'],

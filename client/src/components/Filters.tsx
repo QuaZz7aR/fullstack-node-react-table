@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react";
-import type { Filters } from "../api/employee";
+import type { Filters } from "../types/employee";
 import { useFiltersOptions } from "../hooks/useEmployees"
 import CollapseGroup from "./CollapseGroup";
 
@@ -13,7 +13,7 @@ export default function Filters({ filters, onChange, onReset }: Props) {
     const { data: options, isLoading } = useFiltersOptions();
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>(null);
     const [localSearch, setLocalSearch] = useState(filters.search ?? "");
-
+    
     function searchInputChange(e: ChangeEvent<HTMLInputElement>) {
         setLocalSearch(e.target.value);
 
@@ -84,7 +84,7 @@ export default function Filters({ filters, onChange, onReset }: Props) {
                         onChange={e => onChange("department", e.target.value)}
                     >
                         <option value="">All</option>
-                        {options?.departments.map(d => <option key={d} value={d}>{d}</option>)}
+                        {options?.departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                 </div>
 
@@ -144,7 +144,7 @@ export default function Filters({ filters, onChange, onReset }: Props) {
                         onChange={e => onChange("position", e.target.value)}
                     >
                         <option value="">All</option>
-                        {options?.positions.map(p => <option key={p} value={p}>{p}</option>)}
+                        {options?.positions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                 </div>
             </CollapseGroup>
@@ -192,14 +192,10 @@ export default function Filters({ filters, onChange, onReset }: Props) {
                         onChange={e => onChange("officeCity", e.target.value)}
                     >
                         <option value="">All</option>
-                        {options?.cities.map(c => <option key={c} value={c}>{c}</option>)}
+                        {options?.cities.map(c => <option key={c.id} value={c.id}>{c.city}</option>)}
                     </select>
                 </div>
             </CollapseGroup>
-
-
-
-
         </div>
     )
 }
