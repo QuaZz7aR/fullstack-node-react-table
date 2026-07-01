@@ -1,6 +1,7 @@
 import { Router } from "express";
 import db from "../database.js";
 import { validateEmployee } from "../validation/employee.js";
+import {EMPLOYMENT_TYPE, FORMAT, GENDER, GRADE, SORT_ORDER, STATUS} from "../../client/src/constants/filters.ts";
 
 const router = Router();
 
@@ -13,11 +14,11 @@ router.get("/filters", (req, res) => {
         departments: departments,
         positions: positions,
         cities: cities,
-        grades: ['junior', 'middle', 'senior', 'lead'],
-        statuses: ['active', 'on_leave', 'fired'],
-        formats: ['office', 'remote', 'hybrid'],
-        employmentTypes: ['full-time', 'part-time', 'contract'],
-        genders: ["male", "female"]
+        grades: [GRADE.JUNIOR, GRADE.MIDDLE, GRADE.SENIOR, GRADE.LEAD],
+        statuses: [STATUS.ACTIVE, STATUS.ON_LEAVE, STATUS.FIRED],
+        formats: [FORMAT.OFFICE, FORMAT.REMOTE, FORMAT.HYBRID],
+        employmentTypes: [EMPLOYMENT_TYPE.FULL_TIME, EMPLOYMENT_TYPE.PART_TIME, EMPLOYMENT_TYPE.CONTRACT],
+        genders: [GENDER.MALE, GENDER.FEMALE, GENDER.MEKANIK]
     })
 })
 
@@ -124,7 +125,7 @@ router.post("/list", (req, res) => {
     }
 
     const sortField = allowedSortFields[sortBy] || 'e.last_name'
-    const sortDirection = sortOrder === 'desc' ? 'DESC' : 'ASC'
+    const sortDirection = sortOrder === SORT_ORDER.DESC ? SORT_ORDER.DESC : SORT_ORDER.ASC
     const orderBy = `ORDER BY ${sortField} ${sortDirection}`
 
     const baseQuery = `
@@ -194,7 +195,7 @@ router.post("/create", (req, res) => {
             manager_id, salary, grade, employment_type, format, status, start_date, is_current)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
         `).run(employee.lastInsertRowid, position_id, department_id, office_id ?? null, manager_id ?? null,
-            salary, grade, employment_type, format, status ?? 'active', start_date);
+            salary, grade, employment_type, format, status ?? STATUS.ACTIVE, start_date);
 
         res.status(201).json({ id: employee.lastInsertRowid })
     } catch (e) {

@@ -3,12 +3,13 @@ import type { EmployeeFormData, EmployeeResponse, FilterOptions, Filters } from 
 const API_URL = "http://localhost:3000/api/employees";
 
 export async function fetchEmployees(filters: Filters): Promise<EmployeeResponse> {
+
     const res = await fetch(`${API_URL}/list`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(filters)
     });
-
+    
     return res.json();
 }
 

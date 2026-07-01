@@ -24,7 +24,7 @@ db.exec(`
         last_name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         phone TEXT,
-        gender TEXT CHECK(gender IN('male', 'female')),
+        gender TEXT CHECK(gender IN('male', 'female', 'mekanik')),
         birth_date TEXT
     );
 

@@ -1,3 +1,5 @@
+import {GENDER} from "../../client/src/constants/filters.ts";
+
 export function validateEmployee(data) {
   const errors = {}
 
@@ -13,8 +15,8 @@ export function validateEmployee(data) {
     errors.email = 'Invalid email'
   }
 
-  if (!data.gender || !['male', 'female'].includes(data.gender)) {
-    errors.gender = 'Gender must be male or female'
+  if (!data.gender || ![GENDER.MALE, GENDER.FEMALE, GENDER.MEKANIK].includes(data.gender)) {
+    errors.gender = 'Gender must be male, female or mekanik'
   }
 
   if (!data.salary || isNaN(data.salary) || data.salary < 0) {

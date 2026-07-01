@@ -13,7 +13,7 @@ export default function Filters({ filters, onChange, onReset }: Props) {
     const { data: options, isLoading } = useFiltersOptions();
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>(null);
     const [localSearch, setLocalSearch] = useState(filters.search ?? "");
-    
+
     function searchInputChange(e: ChangeEvent<HTMLInputElement>) {
         setLocalSearch(e.target.value);
 
@@ -84,7 +84,7 @@ export default function Filters({ filters, onChange, onReset }: Props) {
                         onChange={e => onChange("department", e.target.value)}
                     >
                         <option value="">All</option>
-                        {options?.departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                        {options?.departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
                     </select>
                 </div>
 
@@ -144,7 +144,7 @@ export default function Filters({ filters, onChange, onReset }: Props) {
                         onChange={e => onChange("position", e.target.value)}
                     >
                         <option value="">All</option>
-                        {options?.positions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        {options?.positions.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                     </select>
                 </div>
             </CollapseGroup>
@@ -192,7 +192,7 @@ export default function Filters({ filters, onChange, onReset }: Props) {
                         onChange={e => onChange("officeCity", e.target.value)}
                     >
                         <option value="">All</option>
-                        {options?.cities.map(c => <option key={c.id} value={c.id}>{c.city}</option>)}
+                        {options?.cities.map(c => <option key={c.id} value={c.city}>{c.city}</option>)}
                     </select>
                 </div>
             </CollapseGroup>

@@ -1,15 +1,17 @@
-import { useState } from "react";
-import { useEmployees } from "../hooks/useEmployees"
-import { createColumns } from "../columns/columns"
-import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import {useState} from "react";
+import {useEmployees} from "../hooks/useEmployees"
+import {createColumns} from "../columns/columns"
+import {flexRender, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import Filters from "./Filters"
 import Drawer from "./Drawer"
-import type { Employee, EmployeeFormData, Filters as FiltersType } from "../types/employee";
-import { useMutation } from "@tanstack/react-query";
-import { createEmployee, deleteEmployee, updateEmployee } from "../api/employee";
+import type {Employee, EmployeeFormData, Filters as FiltersType} from "../types/employee";
+import {useMutation} from "@tanstack/react-query";
+import {createEmployee, deleteEmployee, updateEmployee} from "../api/employee";
 import queryClient from "../queryClient/queryClient";
 import Modal from "./Modal";
 import EmployeeForm from "./EmployeeForm";
+import ActiveFiltersBar from "./ActiveFiltersBar";
+import {SORT_ORDER} from "../constants/filters.ts"
 
 const allowedSortFields = [
     "first_name",
@@ -30,9 +32,14 @@ export default function EmployeeTable() {
         page: 1,
         pageSize: 20
     });
-    const { data, isLoading, isError } = useEmployees(filters);
+    const {data, isLoading, isError} = useEmployees(filters);
     const [drawerIsOpen, setDrawerIsOpen] = useState(false);
     const columns = createColumns(handleEdit, id => deleteMutation.mutate(id));
+
+    const currentSorting = [{
+        id: filters.sortBy ?? "last_name",
+        desc: filters.sortOrder === SORT_ORDER.DESC
+    }];
 
     const table = useReactTable({
         data: data?.data ?? [],
@@ -41,31 +48,29 @@ export default function EmployeeTable() {
         manualSorting: true,
         columnResizeMode: "onChange",
         onSortingChange: (updater) => {
-            const newSorting = typeof updater === "function" ? updater([]) : updater;
+            const newSorting = typeof updater === "function" ? updater(currentSorting) : updater;
             if (newSorting.length > 0) {
                 setFilters(prev => ({
                     ...prev,
                     sortBy: newSorting[0].id,
-                    sortOrder: newSorting[0].desc ? "desc" : "asc",
+                    sortOrder: newSorting[0].desc ? SORT_ORDER.DESC : SORT_ORDER.ASC,
                     page: 1
                 }))
             }
         },
         state: {
-            sorting: [{
-                id: filters.sortBy ?? "last_name",
-                desc: filters.sortOrder === "desc"
-            }]
+            sorting: currentSorting
         },
+        enableSortingRemoval: false,
     })
 
-    function countActiveFilters(filters: object) {
+    function getActiveFilters(filters: FiltersType): [keyof FiltersType, string | number][] {
         const ignored = ["page", "pageSize", "sortBy", "sortOrder"];
         return Object.entries(filters).filter(([key, value]) =>
-            !ignored.includes(key) && value !== "" && value !== undefined && value !== null).length
+            !ignored.includes(key) && value !== "" && value !== undefined && value !== null) as [keyof FiltersType, string | number][]
     }
 
-    const activeFilters = countActiveFilters(filters);
+    const activeFilters = getActiveFilters(filters);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
@@ -74,7 +79,7 @@ export default function EmployeeTable() {
     const createMutation = useMutation({
         mutationFn: createEmployee,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["employees"] });
+            queryClient.invalidateQueries({queryKey: ["employees"]});
             setIsModalOpen(false);
         },
         onError: (err: { errors: Record<string, string> }) => {
@@ -84,9 +89,9 @@ export default function EmployeeTable() {
     })
 
     const updateMutation = useMutation({
-        mutationFn: ({ data, id }: { id: number, data: EmployeeFormData }) => updateEmployee(data, id),
+        mutationFn: ({data, id}: { id: number, data: EmployeeFormData }) => updateEmployee(data, id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["employees"] });
+            queryClient.invalidateQueries({queryKey: ["employees"]});
             setIsModalOpen(false);
         },
         onError: (err: { errors: Record<string, string> }) => {
@@ -97,14 +102,14 @@ export default function EmployeeTable() {
     const deleteMutation = useMutation({
         mutationFn: deleteEmployee,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["employees"] });
+            queryClient.invalidateQueries({queryKey: ["employees"]});
         }
     })
 
     function handleSubmit(data: EmployeeFormData) {
         setServerErrors({});
         if (editingEmployee) {
-            updateMutation.mutate({ id: editingEmployee.id, data })
+            updateMutation.mutate({id: editingEmployee.id, data})
         } else {
             createMutation.mutate(data);
         }
@@ -122,94 +127,104 @@ export default function EmployeeTable() {
         setIsModalOpen(true);
     }
 
+    function handleRemoveActiveFilter(key: keyof FiltersType) {
+        setFilters(prev => ({...prev, [key]: undefined, page: 1}))
+    }
+
     if (isLoading) return <div>Data is loading...</div>
     if (isError) return <div>Something went wrong while fetching employees...</div>
 
     return (
         <div className="p-4">
-            <div className="flex gap-2 mb-4">
-                <button className=" px-4 py-2 border-2 rounded text-sm font-semibold hover:bg-gray-50 hover:cursor-pointer"
+            <div className="flex gap-2 mb-4 items-center">
+                <button
+                    className="px-4 py-2 border-2 rounded text-sm font-semibold hover:bg-gray-50 hover:cursor-pointer"
                     onClick={() => setDrawerIsOpen(true)}>
-                    ☰ Filters ({activeFilters})
+                    ☰ Filters ({activeFilters.length})
                 </button>
 
                 <button
-                    className=" px-4 py-2 border-2 rounded text-sm font-semibold hover:bg-gray-50 hover:cursor-pointer"
+                    className="px-4 py-2 border-2 rounded text-sm font-semibold hover:bg-gray-50 hover:cursor-pointer"
                     onClick={handleCreate}
                 >
                     + Add Employee
                 </button>
+                <ActiveFiltersBar activeFilters={activeFilters} onRemove={handleRemoveActiveFilter}/>
             </div>
 
             <Drawer isOpen={drawerIsOpen} onClose={() => setDrawerIsOpen(false)}>
                 <Filters
                     filters={filters}
-                    onChange={(key, value) => setFilters(prev => ({ ...prev, [key]: value, page: 1 }))}
+                    onChange={(key, value) => setFilters(prev => ({...prev, [key]: value, page: 1}))}
                     onReset={() => setFilters({
                         page: 1,
                         pageSize: 20,
                         sortBy: "last_name",
-                        sortOrder: "asc"
-                    })} />
+                        sortOrder: SORT_ORDER.ASC
+                    })}/>
             </Drawer>
 
             <div className="w-full">
                 <div className="overflow-x-scroll">
-                    <table className="w-full border-collapse text-sm" style={{ width: table.getTotalSize() }}>
+                    <table className="w-full border-collapse text-sm" style={{width: table.getTotalSize()}}>
                         <thead>
-                            {table.getHeaderGroups().map(headerGroup => <tr key={headerGroup.id} className="border-b bg-gray-300">
-                                {headerGroup.headers.map(header => <th
-                                    key={header.id}
-                                    className={`p-2 text-left font-semibold border relative
+                        {table.getHeaderGroups().map(headerGroup => <tr key={headerGroup.id} className="border-b bg-gray-300">
+                            {headerGroup.headers.map(header => <th
+                                key={header.id}
+                                className={`p-2 text-left font-semibold border relative
                                         ${allowedSortFields.includes(header.column.id) ? "hover:cursor-pointer" : ""}`}
-                                    onClick={allowedSortFields.includes(header.column.id) ? header.column.getToggleSortingHandler() : undefined}
-                                    style={{ width: header.getSize() }}
-                                >
-                                    {flexRender(header.column.columnDef.header, header.getContext())}
-                                    {allowedSortFields.includes(header.column.id) ? header.column.getIsSorted() === 'asc' ? ' ↑' : header.column.getIsSorted() === 'desc' ? ' ↓' : ' ↕' : undefined}
+                                onClick={allowedSortFields.includes(header.column.id) ? header.column.getToggleSortingHandler() : undefined}
+                                style={{width: header.getSize()}}
+                            >
+                                {flexRender(header.column.columnDef.header, header.getContext())}
+                                {allowedSortFields.includes(header.column.id) ? header.column.getIsSorted() === SORT_ORDER.ASC ? ' ↑' : header.column.getIsSorted() === SORT_ORDER.DESC ? ' ↓' : ' ↕' : undefined}
 
-                                    <div className={`absolute top-0 right-0 h-full w-1 
+                                <div className={`absolute top-0 right-0 h-full w-1 
                                     cursor-col-resize select-none touch-none bg-gray-300 hover:bg-blue-400
                                     ${header.column.getIsResizing() ? 'bg-blue-600' : ''}`}
-                                        onClick={e => e.stopPropagation()}
-                                        onMouseDown={header.getResizeHandler()}
-                                        onTouchStart={header.getResizeHandler()} />
-                                </th>)}
-                            </tr>)}
+                                     onClick={e => e.stopPropagation()}
+                                     onMouseDown={header.getResizeHandler()}
+                                     onTouchStart={header.getResizeHandler()}/>
+                            </th>)}
+                        </tr>)}
                         </thead>
                         <tbody>
-                            {table.getRowModel().rows.map(row => <tr key={row.id} className="border-b hover:bg-gray-300">
-                                {row.getVisibleCells().map(cell => <td key={cell.id} className="p-2">
-                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                </td>)}
-                            </tr>)}
+                        {table.getRowModel().rows.map(row => <tr key={row.id} className="border-b hover:bg-gray-300">
+                            {row.getVisibleCells().map(cell => <td key={cell.id} className="p-2">
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>)}
+                        </tr>)}
                         </tbody>
                     </table>
                 </div>
                 <div className=" flex mt-4 gap-2 items-center">
                     <button
                         className="px-3 py-1 border rounded disabled:opacity-20 disabled:hover:cursor-auto hover:cursor-pointer"
-                        onClick={() => setFilters(prev => ({ ...prev, page: 1 }))}
+                        onClick={() => setFilters(prev => ({...prev, page: 1}))}
                         disabled={filters.page === 1}
-                    >«</button>
+                    >«
+                    </button>
                     <button
                         className="px-3 py-1 border rounded disabled:opacity-20 disabled:hover:cursor-auto hover:cursor-pointer"
-                        onClick={() => setFilters(prev => ({ ...prev, page: (prev.page ?? 1) - 1 }))}
+                        onClick={() => setFilters(prev => ({...prev, page: (prev.page ?? 1) - 1}))}
                         disabled={filters.page === 1}
-                    >‹</button>
+                    >‹
+                    </button>
 
                     <span className="mx-2">Page {data?.page} of {data?.totalPages}</span>
 
                     <button
                         className="px-3 py-1 border rounded disabled:opacity-20 disabled:hover:cursor-auto hover:cursor-pointer"
-                        onClick={() => setFilters(prev => ({ ...prev, page: (prev.page ?? 1) + 1 }))}
+                        onClick={() => setFilters(prev => ({...prev, page: (prev.page ?? 1) + 1}))}
                         disabled={filters.page === data?.totalPages}
-                    >›</button>
+                    >›
+                    </button>
                     <button
                         className="px-3 py-1 border rounded disabled:opacity-20 disabled:hover:cursor-auto hover:cursor-pointer"
-                        onClick={() => setFilters(prev => ({ ...prev, page: data?.totalPages }))}
+                        onClick={() => setFilters(prev => ({...prev, page: data?.totalPages}))}
                         disabled={filters.page === data?.totalPages}
-                    >»</button>
+                    >»
+                    </button>
                 </div>
                 <Modal
                     title={editingEmployee ? "Edit employee data" : "Create new employee"}
@@ -217,7 +232,8 @@ export default function EmployeeTable() {
                     isOpen={isModalOpen}
                 >
                     <EmployeeForm initial={editingEmployee ?? undefined} onSubmit={handleSubmit}
-                        serverErrors={serverErrors} isLoading={createMutation.isPending || updateMutation.isPending}
+                                  serverErrors={serverErrors}
+                                  isLoading={createMutation.isPending || updateMutation.isPending}
                     />
                 </Modal>
             </div>

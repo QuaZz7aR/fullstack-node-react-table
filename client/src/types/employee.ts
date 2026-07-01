@@ -1,18 +1,20 @@
+import type {SortOrder} from "../constants/filters.ts"
+
 export interface EmployeeFormData {
-    first_name: string
-    last_name: string
-    email: string
-    phone: string
-    gender: string
-    birth_date: string
-    salary: number
-    grade: string
-    employment_type: string
-    format: string
-    status: string
-    start_date: string
-    department_id: number
-    position_id: number
+    first_name: string,
+    last_name: string,
+    email: string,
+    phone: string,
+    gender: string,
+    birth_date: string,
+    salary: number,
+    grade: string,
+    employment_type: string,
+    format: string,
+    status: string,
+    start_date: string,
+    department_id: number,
+    position_id: number,
     office_id: number
 }
 
@@ -55,7 +57,7 @@ export interface Filters {
     page?: number,
     pageSize?: number,
     sortBy?: string,
-    sortOrder?: "asc" | "desc"
+    sortOrder?: SortOrder
 }
 
 export interface EmployeeResponse {

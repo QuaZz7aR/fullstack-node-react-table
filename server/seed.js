@@ -1,4 +1,5 @@
 import db from "./database.js"
+import {EMPLOYMENT_TYPE, FORMAT, GENDER, GRADE, STATUS} from "../client/src/constants/filters.ts";
 
 const departments = [
     'Engineering',
@@ -15,11 +16,11 @@ const offices = [
     { city: 'Berlin', country: 'Germany' },
     { city: 'Amsterdam', country: 'Netherlands' },
     { city: 'Prague', country: 'Czech Republic' },
-    { city: 'Remote', country: 'Worldwide' },
+    { city: FORMAT.REMOTE, country: 'Worldwide' },
 ]
 
 const positions = [
-    { name: "Frontent developer", department: "Engineering" },
+    { name: "Frontend developer", department: "Engineering" },
     { name: "Backend developer", department: "Engineering" },
     { name: "QA Engineer", department: "Engineering" },
     { name: "Product manager", department: "Product" },
@@ -85,16 +86,16 @@ for (let i = 0; i < 200; i++) {
     const last_name = randomItem(lastNames);
     const email = `${first_name.toLowerCase()}${last_name.toLowerCase()}${i}@company.com`;
     const phone = `+48${Math.floor(100000000 + Math.random() * 900000000)}`;
-    const gender = randomItem(["male", "female"]);
+    const gender = randomItem([GENDER.MALE, GENDER.FEMALE, GENDER.MEKANIK]);
     const birth_date = randomDate("1980-01-01", "2005-12-31");
     insertEmployee.run(first_name, last_name, email, phone, gender, birth_date);
 }
 console.log('employees seeded');
 
-const grades = ['junior', 'middle', 'senior', 'lead']
-const employmentTypes = ['full-time', 'part-time', 'contract']
-const formats = ['office', 'remote', 'hybrid']
-const statuses = ['active', 'active', 'active', 'on_leave', 'fired']
+const grades = [GRADE.JUNIOR, GRADE.JUNIOR, GRADE.SENIOR, GRADE.LEAD]
+const employmentTypes = [EMPLOYMENT_TYPE.FULL_TIME, EMPLOYMENT_TYPE.PART_TIME, EMPLOYMENT_TYPE.CONTRACT]
+const formats = [FORMAT.OFFICE, FORMAT.REMOTE, FORMAT.HYBRID]
+const statuses = [STATUS.ACTIVE, STATUS.ACTIVE, STATUS.ACTIVE, STATUS.ON_LEAVE, STATUS.FIRED]
 
 const allEmployees = db.prepare("SELECT id FROM employees").all();
 const allPositions = db.prepare("SELECT id, department_id FROM positions").all();

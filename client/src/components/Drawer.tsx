@@ -1,3 +1,5 @@
+import * as React from "react";
+
 interface Props {
     children: React.ReactNode
     isOpen: boolean,
@@ -12,7 +14,7 @@ function Drawer({ children, isOpen, onClose }: Props) {
                 onClick={onClose} />
             }
 
-            <div className={`fixed top-0 left-0 h-full bg-white z-20 shadow-xl 
+            <div className={`fixed top-0 left-0 h-full bg-white z-20 shadow-xl w-1/4
             transition-transform duration-300 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
                 <div className="flex justify-between items-center p-4 border-b">
                     <span className="font-semibold">Filters</span>
